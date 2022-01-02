@@ -84,5 +84,91 @@ CONSTRAINT FK1_MFPortfolioClient_T FOREIGN KEY(TaxPayerID) REFERENCES Client_T (
 CONSTRAINT FK2_MFPortfolioMutualFund FOREIGN KEY(MFTicker) REFERENCES MutualFund_T(MFTicker) 
 );
 ```
+**Query the number of stock shares each client has purchased**
+```
+SELECT c.TaxPayerId,
+              ClientName,
+              SUM(s.StockTotalShares) TotalShares
+FROM (SELECT c.TaxPayerId, i.FirstName || ' ' || i.LastName ClientName
+             FROM Client_t c
+             INNER JOIN
+             Individual_T i
+             ON c.TaxPayerId = i.TaxPayerId 
+
+             UNION
+
+             SELECT c.TaxPayerId, b.BusinessName ClientName
+             FROM Client_t c
+             INNER JOIN
+             Business_T b
+             ON c.TaxPayerId = b.TaxPayerId 
+             ) c
+INNER JOIN
+StockPortfolio_t s
+ON c.TaxPayerId = s.TaxPayerId
+GROUP BY c.TaxPayerId, ClientName
+ORDER BY c.ClientName;
+```
+## PL/SQL Statement Block
+**The procedure allows a user to create a client that represents an individual. It will create a record in the supertype and corresponding subtype.**
+```
+CREATE OR REPLACE PROCEDURE new_individual_client
+(tax_payer_id IN Client_t.TaxPayerId%TYPE,
+first_name IN Individual_T.FirstName%TYPE,
+last_name IN Individual_T.LastName%TYPE,
+date_of_birth IN Individual_T.DateOfBirth%TYPE,
+street_address IN Client_T.StreetAddress%TYPE,
+state IN Client_T.State%TYPE,
+city IN Client_T.City%TYPE,
+zip_code IN Client_T.ZipCode%TYPE)
+IS
+BEGIN
+
+    INSERT INTO Client_T
+    VALUES (tax_payer_id, street_address, state, city, zip_code, 'I');
+
+    INSERT INTO Individual_T
+    VALUES (tax_payer_id,first_name,last_name,date_of_birth);
+
+END new_individual_client;
+```
+**The below procedure will allow the database analyst to update the current price of each Mutual Fund. The record can thus be used to observe the trend of increase/decrease in mutual fund.**
+```
+Create or replace procedure UpdateCurrentPrice
+(
+p_MFTicker IN MutualFund_T.MFTicker%TYPE,
+p_CurrentPrice IN MutualFund_T.CurrentPrice%Type)
+IS
+BEGIN
+  UPDATE MutualFund_T SET CurrentPrice= p_CurrentPrice  WHERE MFTicker = p_MFTicker;
+  
+  COMMIT;
+END;
+/
+```
+**This procedure will allow the DB administrator to update the  historical stock information which includes Low Price, High Price, Prior Year Appreciation and Five Year Appreciation.**
+```
+CREATE OR REPLACE PROCEDURE Update_Historical_Stock_Info_SP 
+(STicker IN VARCHAR2,
+ LPrice IN NUMBER,
+ HPrice IN NUMBER,
+ PYearAppreciation IN NUMBER,
+ FYearAppreciation IN NUMBER)
+AS
+   BEGIN
+        UPDATE Stock_T 
+        SET LowPrice = LPrice,
+            HighPrice = HPrice,
+            PriorYearAppreciation = PYearAppreciation,
+            FiveYearAppreciation = FYearAppreciation
+        WHERE StockTicker = STicker;
+    END;
+
+EXECUTE Update_Historical_Stock_Info_SP ('ADP', 56.00, 67.00, .09, .18);
+
+COMMIT;
+```
+
+
 
 
