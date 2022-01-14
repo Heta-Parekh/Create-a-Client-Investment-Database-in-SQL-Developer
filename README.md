@@ -1,4 +1,4 @@
-# Design-a-Client-Investment-Database-in-SQL-developer
+# Design-a-Client-Investment-Database-in-Oracle
 Develop investment portfolio, provide insights to record, track  and analyze client investments pertaining to mutual funds and stock shares. 
 
 ## The below ER diagram displays the investment portfolio case study.
